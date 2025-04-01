@@ -1,4 +1,193 @@
-<div>
-  <h1 class="font-bold text-4xl">Pages#pricing</h1>
-  <p>Find me in app/views/pages/pricing.html.erb</p>
+<!-- Pricing Header -->
+<div class="bg-white">
+  <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+    <div class="text-center">
+      <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Pricing</h2>
+      <p class="mt-1 text-4xl font-extrabold text-gray-900 sm:text-5xl sm:tracking-tight lg:text-6xl">
+        Simple, transparent pricing
+      </p>
+      <p class="max-w-xl mt-5 mx-auto text-xl text-gray-500">
+        Choose the plan that best fits your needs. All plans include our core features.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Pricing Tiers -->
+<div class="bg-gray-50">
+  <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- Free Tier -->
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-8 sm:px-10 sm:py-10">
+          <h3 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Free</h3>
+          <p class="mt-4 text-sm text-gray-500">Perfect for trying out VoiceThread</p>
+          <p class="mt-8">
+            <span class="text-4xl font-extrabold text-gray-900">$0</span>
+            <span class="text-base font-medium text-gray-500">/month</span>
+          </p>
+          <%= link_to "Get Started", new_topic_path, class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
+        </div>
+        <div class="px-6 pt-6 pb-8 bg-gray-50 sm:px-10 sm:pt-10">
+          <h4 class="text-xs font-medium text-gray-900 tracking-wide uppercase">What's included</h4>
+          <ul class="mt-6 space-y-4">
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Up to 5 interviews per month</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Basic AI interviewer</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Standard audio quality</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Pro Tier -->
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden border-2 border-indigo-600">
+        <div class="px-6 py-8 sm:px-10 sm:py-10">
+          <h3 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Pro</h3>
+          <p class="mt-4 text-sm text-gray-500">For serious storytellers</p>
+          <p class="mt-8">
+            <span class="text-4xl font-extrabold text-gray-900">$29</span>
+            <span class="text-base font-medium text-gray-500">/month</span>
+          </p>
+          <%= link_to "Get Started", new_topic_path, class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
+        </div>
+        <div class="px-6 pt-6 pb-8 bg-gray-50 sm:px-10 sm:pt-10">
+          <h4 class="text-xs font-medium text-gray-900 tracking-wide uppercase">What's included</h4>
+          <ul class="mt-6 space-y-4">
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Unlimited interviews</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Advanced AI interviewer</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">High-quality audio</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Priority support</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Enterprise Tier -->
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-8 sm:px-10 sm:py-10">
+          <h3 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Enterprise</h3>
+          <p class="mt-4 text-sm text-gray-500">For organizations and teams</p>
+          <p class="mt-8">
+            <span class="text-4xl font-extrabold text-gray-900">Custom</span>
+            <span class="text-base font-medium text-gray-500">/month</span>
+          </p>
+          <%= link_to "Contact Sales", "#", class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
+        </div>
+        <div class="px-6 pt-6 pb-8 bg-gray-50 sm:px-10 sm:pt-10">
+          <h4 class="text-xs font-medium text-gray-900 tracking-wide uppercase">What's included</h4>
+          <ul class="mt-6 space-y-4">
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Everything in Pro</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Custom AI training</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">Dedicated support</span>
+            </li>
+            <li class="flex space-x-3">
+              <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-500">SLA guarantee</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FAQ Section -->
+<div class="bg-white">
+  <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto divide-y-2 divide-gray-200">
+      <h2 class="text-center text-3xl font-extrabold text-gray-900 sm:text-4xl">
+        Frequently asked questions
+      </h2>
+      <dl class="mt-6 space-y-6 divide-y divide-gray-200">
+        <div class="pt-6">
+          <dt class="text-lg">
+            <span class="font-medium text-gray-900">What happens after my free trial?</span>
+          </dt>
+          <dd class="mt-2 text-base text-gray-500">
+            After your free trial, you can continue using the free tier with limited features, or upgrade to Pro for full access to all features.
+          </dd>
+        </div>
+        <div class="pt-6">
+          <dt class="text-lg">
+            <span class="font-medium text-gray-900">Can I cancel my subscription?</span>
+          </dt>
+          <dd class="mt-2 text-base text-gray-500">
+            Yes, you can cancel your subscription at any time. You'll continue to have access to your recordings and features until the end of your billing period.
+          </dd>
+        </div>
+        <div class="pt-6">
+          <dt class="text-lg">
+            <span class="font-medium text-gray-900">What payment methods do you accept?</span>
+          </dt>
+          <dd class="mt-2 text-base text-gray-500">
+            We accept all major credit cards through Stripe. For Enterprise plans, we also accept bank transfers and purchase orders.
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<!-- CTA Section -->
+<div class="bg-indigo-50">
+  <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
+    <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+      <span class="block">Ready to start your journey?</span>
+      <span class="block text-indigo-600">Start your VoiceThread today.</span>
+    </h2>
+    <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+      <div class="inline-flex rounded-md shadow">
+        <%= link_to "Get Started", new_topic_path, class: "inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+      </div>
+    </div>
+  </div>
 </div>

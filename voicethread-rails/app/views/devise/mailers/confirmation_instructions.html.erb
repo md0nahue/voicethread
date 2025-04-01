@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+  </head>
+  <body>
+    <h2>Welcome to VoiceThread!</h2>
+
+    <p>You can confirm your account email through the link below:</p>
+
+    <p><%= link_to 'Confirm my account', confirmation_url(@resource, confirmation_token: @token) %></p>
+
+    <p>If you didn't request this, please ignore this email.</p>
+    <p>Your account won't be activated until you access the link above and set your password.</p>
+
+    <p>Best regards,<br>The VoiceThread Team</p>
+  </body>
+</html> 

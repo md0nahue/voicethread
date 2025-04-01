@@ -1,0 +1,66 @@
+Alright, here's how we can break it down:
+
+---
+
+### 🔧 **How to Implement Monthly Stripe Payments with a Free Trial**
+
+#### 1. **Stripe Setup**
+- Create a Stripe account.
+- Set up your **Product** (e.g., “VoiceThread Pro”).
+- Create a **Monthly Subscription Price**, with a **7-day free trial**:
+  - Go to Stripe Dashboard → Products → Add Product.
+  - Under pricing, choose **Recurring → Monthly**, then enable **Trial Period = 7 days**.
+
+#### 2. **Backend Logic**
+Use Stripe’s **Checkout Session** API or **Stripe Customer Portal**.
+
+##### If using Stripe Checkout:
+- Create a checkout session from your backend with:
+```json
+{
+  "mode": "subscription",
+  "line_items": [{ "price": "price_abc123", "quantity": 1 }],
+  "subscription_data": { "trial_period_days": 7 },
+  "success_url": "https://yourapp.com/success?session_id={CHECKOUT_SESSION_ID}",
+  "cancel_url": "https://yourapp.com/cancel"
+}
+```
+
+##### If using Stripe Subscriptions directly:
+- Create a Customer.
+- Create a Subscription with a 7-day trial.
+- Save the subscription and customer IDs in your DB.
+
+#### 3. **Frontend Flow**
+- Add a “Start Free Trial” button in your app UI.
+- When clicked, it calls your backend to generate a Checkout session.
+- Redirect the user to the Stripe-hosted checkout page.
+
+#### 4. **Post-Payment Hook**
+- Set up a **Webhook** to listen for:
+  - `invoice.payment_succeeded`
+  - `customer.subscription.created`
+  - `customer.subscription.trial_will_end`
+- Use this to unlock features or warn them the trial is ending.
+
+---
+
+### 💸 What’s a Realistic Price Point?
+
+Depends on your audience, but here’s a guideline for SaaS tools like this:
+
+| Tier            | Price     | Notes |
+|------------------|-----------|-------|
+| 🟢 Entry/Hobby    | $5–10/mo  | For casual users |
+| 🟡 Standard Pro    | $15–25/mo | For job seekers, creators, coaches |
+| 🔴 Enterprise-ish | $50+/mo   | Only if you offer team features or rich analytics |
+
+For a solo creator/interviewer tool with Whisper + LLMs involved, **$15/mo** is a solid start.
+
+**Optional**:
+- Offer annual pricing with a discount (e.g., $144/year = 20% off $15/mo).
+- Consider tiered pricing if features vary (e.g., number of interviews, storage length, etc.)
+
+---
+
+Want help wiring it into your Rails app or designing your pricing UI next?

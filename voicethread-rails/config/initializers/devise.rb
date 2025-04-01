@@ -122,7 +122,11 @@ Devise.setup do |config|
   # a value less than 10 in other environments. Note that, for bcrypt (the default
   # algorithm), the cost increases exponentially with the number of stretches (e.g.
   # a value of 20 is already extremely slow: approx. 60 seconds for 1 calculation).
-  config.stretches = Rails.env.test ? 1 : 12
+  config.stretches = if Rails.env.test?
+                      1
+                    else
+                      12
+                    end
 
   # Set up a pepper to generate the hashed password.
   # config.pepper = 'your-pepper-here'
@@ -150,10 +154,10 @@ Devise.setup do |config|
   # If true, requires any email changes to be confirmed (exactly the same way as
   # initial account confirmation) to be applied. Requires additional unconfirmed_email
   # db field (see migrations). Until confirmed, new email is stored in
-  # unconfirmed_email column, and copied to email column on successful confirmation.
+  # unconfirmed_email field, and copied to email field on successful confirmation.
   config.reconfirmable = true
 
-  # Defines which key will be used when confirming an account
+  # Defines which key will be used when confirming an email
   # config.confirmation_keys = [:email]
 
   # ==> Configuration for :rememberable
@@ -161,14 +165,10 @@ Devise.setup do |config|
   # config.remember_for = 2.weeks
 
   # Invalidates all the remember me tokens when the user signs out.
-  config.expire_auth_token_on_timeout = false
+  config.expire_all_remember_me_on_sign_out = true
 
   # If true, extends the user's remember period when remembered via cookie.
   # config.extend_remember_period = false
-
-  # Options to be passed to the created cookie. For instance, you can set
-  # secure: true in order to force SSL only cookies.
-  # config.rememberable_options = {}
 
   # ==> Configuration for :validatable
   # Range for password length.
@@ -186,11 +186,11 @@ Devise.setup do |config|
 
   # ==> Configuration for :lockable
   # Defines which strategy will be used to lock an account.
-  # :failed_attempts = Locks an account after a number of failed attempts to sign in.
+  # :failed_attempts = It is locked until a time is set by lock_strategy
   # :none            = No lock strategy. You should handle locking by yourself.
   # config.lock_strategy = :failed_attempts
 
-  # Defines which key will be used when locking and unlocking an account.
+  # Defines which key will be used when locking and unlocking an account
   # config.unlock_keys = [:email]
 
   # Defines which strategy will be used to unlock an account.
@@ -198,7 +198,7 @@ Devise.setup do |config|
   # :time  = Re-enables login after a certain amount of time (see :unlock_in below)
   # :both  = Enables both strategies
   # :none  = No unlock strategy. You should handle unlocking by yourself.
-  # config.unlock_strategy = :both
+  # config.unlock_strategy = :time
 
   # Number of authentication tries before locking an account if lock_strategy
   # is failed attempts.
@@ -213,7 +213,7 @@ Devise.setup do |config|
   # ==> Configuration for :recoverable
   #
   # Defines which key will be used when recovering the password for an account
-  # config.recovery_keys = [:email]
+  # config.recoverable_keys = [:email]
 
   # Time interval you can reset your password with a reset password key.
   # Don't put a too small interval or your users won't have the time to
@@ -228,11 +228,8 @@ Devise.setup do |config|
   # Allow you to use another hashing or encryption algorithm besides bcrypt (default).
   # You can use :sha1, :sha512 or algorithms from others authentication tools as
   # :clearance_sha1, :authlogic_sha512 (then you should set stretches above to 20
-  # for default behavior) and :restful_authentication_sha1 (then you should set
-  # stretches to 10, and copy REST_AUTH_SITE_KEY to pepper).
-  #
-  # Require the `devise-encryptable` gem when using anything other than bcrypt
-  # config.encryptor = :sha512
+  # for default behavior) or :devise_encryptable, :database_authenticatable.
+  # config.encryptor = :sha1
 
   # ==> Scopes configuration
   # Turn scoped views on. Before rendering "sessions/new", it will first check for
@@ -249,61 +246,45 @@ Devise.setup do |config|
   # config.sign_out_via = :delete
 
   # ==> Navigation configuration
-  # Lists the formats that should be treated as navigational. Formats like
-  # :html, should redirect to the sign in page when the user does not have
-  # access, but formats like :xml or :json, should return 401.
+  # Lists the formats that should be treated as navigational. Formats like :html,
+  # should redirect to the sign in page when the user does not have access
+  # but formats like :xml or :json, should return 401.
   #
-  # If you have any extra navigational formats, like :iphone or :mobile, you
-  # should add them to the navigational formats lists.
-  #
-  # The "*/*" below is required to match Internet Explorer requests.
-  # config.navigational_formats = ['*/*', :html, :turbo_stream]
-
-  # The default HTTP method used to sign out a resource. Default is :delete.
-  config.sign_out_via = :delete
-
-  # ==> OmniAuth
-  # Add a new OmniAuth provider. Check the wiki for more information on setting
-  # up on your models and hooks.
-  # config.omniauth :github, 'APP_ID', 'APP_SECRET', scope: 'user,public_repo'
+  # If you have an extra navigation formats, add :html to this list.
+  # Extending navigational formats be useful for users with older browsers.
+  # config.navigational_formats = [:html]
 
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or
   # change the failure app, you can configure them inside the config.warden block.
   #
   # config.warden do |manager|
-  #   manager.failure_app   = AnotherApp
-  #   manager.default_strategies(scope: :user).unshift :some_external_strategy
   #   manager.intercept_401 = false
-  #   manager.default_scope = :user
+  #   manager.default_strategies(scope: :user).unshift :some_strategy
+  #   manager.default_failure_app = self
   # end
 
   # ==> Mountable engine configurations
-  # When using Devise inside an engine, let's call it `MyEngine`, and this engine
-  # is mountable, there are some extra configurations to be taken into account.
-  # The following options are available, assuming the engine is mounted as:
+  # When using Devise inside an engine, let's say it is mountable, there are some
+  # extra configurations you might want to take into account.  For instance, an
+  # engine mountable is:
+  # mountable, separate from the main application, and engine resources
+  # are accessible. The following configuration options are available, all of
+  # them also in engine's initializers. The following examples can be used
+  # inside engine's mountable/initializers/devise.rb:
   #
-  #     mount MyEngine, at: '/my_engine'
+  # config.warden do |manager|
+  #   manager.failure_app   = Devise::FailureApp.new
+  #   manager.intercept_401 = false
+  #   manager.default_strategies(scope: :user).unshift :some_strategy
+  #   manager.default_failure_app = self
+  # end
   #
-  # The router that invoked `devise_for`, in the example above, would be:
-  # config.router_name = :my_engine
+  # ==> Turbolinks configuration
+  # If your app is using Turbolinks, Turbolinks::Controller needs to be included
+  # to make redirection work correctly:
   #
-  # When using OmniAuth, Devise cannot automatically set OmniAuth path,
-  # so you need to do it manually. For the users scope, it would be:
-  # config.omniauth_path_prefix = '/my_engine/users/auth'
-
-  # ==> Hotwire/Turbo configuration
-  # When using Devise with Hotwire/Turbo, the http status for error responses
-  # and some redirects must match the following. The default in Devise for existing
-  # apps is `200 OK` and `302 Found` respectively, but new apps are generated with
-  # these new defaults that match Hotwire/Turbo behavior.
-  # Note: These might become the new default in future versions of Devise.
-  config.responder.error_status = :unprocessable_entity
-  config.responder.redirect_status = :see_other
-
-  # ==> Configuration for :registerable
-
-  # When set to false, does not sign a user in automatically after their password is
-  # changed. Defaults to true, so a user is signed in automatically after changing a password.
-  # config.sign_in_after_change_password = true
+  # ActiveSupport.on_load(:devise_failure_app) do
+  #   include Turbolinks::Controller
+  # end
 end

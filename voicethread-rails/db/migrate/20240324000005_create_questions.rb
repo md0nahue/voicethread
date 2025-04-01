@@ -8,6 +8,7 @@ class CreateQuestions < ActiveRecord::Migration[7.1]
       t.float :duration
       t.string :status, default: 'pending'
       t.boolean :is_followup_question, default: false
+      t.decimal :llm_fee, precision: 15, scale: 7
 
       t.timestamps
     end

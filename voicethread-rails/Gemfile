@@ -77,16 +77,18 @@ gem "devise"
 # Payment processing
 gem "stripe"
 
-# AWS for email
+# AWS for email and storage
 gem "aws-sdk-ses"
+gem "aws-sdk-s3"
+gem "aws-sdk-polly"
 
 # Background jobs
 gem "sidekiq"
-
-# File uploads
-gem "aws-sdk-s3"
 
 # API documentation
 gem "rswag-ui"
 gem "rswag-api"
 gem "rswag-specs"
+
+# OpenAI for AI features
+gem "ruby-openai"

@@ -17,6 +17,9 @@ Rails.application.routes.draw do
   get 'features', to: 'pages#features'
   get 'pricing', to: 'pages#pricing'
 
+  # Topics routes
+  resources :topics
+
   # Stripe routes
   resources :subscriptions, only: [:new, :create] do
     collection do
@@ -27,6 +30,9 @@ Rails.application.routes.draw do
 
   # Webhook route for Stripe
   post 'webhooks/stripe', to: 'webhooks#stripe'
+
+  # Action Cable WebSocket routes
+  mount ActionCable.server => '/cable'
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
   # Can be used by load balancers and uptime monitors to verify that the app is live.

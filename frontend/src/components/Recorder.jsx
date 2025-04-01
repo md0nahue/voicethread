@@ -13,6 +13,8 @@ export default function Recorder() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioChunks, setAudioChunks] = useState([]);
   const [isSilenceDetected, setIsSilenceDetected] = useState(true);
+  const [questions, setQuestions] = useState([]);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
   const mediaRecorderRef = useRef(null);
   const timerRef = useRef(null);
   const waveformRef = useRef(null);
@@ -22,7 +24,7 @@ export default function Recorder() {
   const silenceTimerRef = useRef(null);
   const currentChunkRef = useRef([]);
   const sessionId = searchParams.get('session') || 'default-session';
-  const topic = searchParams.get('topic');
+  const topicId = searchParams.get('topic');
 
   useEffect(() => {
     // Initialize WebSocket connection
@@ -30,12 +32,18 @@ export default function Recorder() {
 
     wsRef.current.onopen = () => {
       console.log('WebSocket connected');
+      // Request questions when connected
+      if (topicId) {
+        requestQuestions();
+      }
     };
 
     wsRef.current.onmessage = (event) => {
       const response = JSON.parse(event.data);
       if (response.type === 'ack') {
         console.log('Audio chunk saved:', response);
+      } else if (response.type === 'interview_questions') {
+        handleQuestionsReceived(response);
       }
     };
 
@@ -115,6 +123,33 @@ export default function Recorder() {
       }
     };
   }, []);
+
+  const requestQuestions = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'request_questions',
+        topicId: topicId,
+        userId: 'current-user-id' // TODO: Get actual user ID
+      }));
+    }
+  };
+
+  const handleQuestionsReceived = (response) => {
+    // Flatten all questions from all sections
+    const allQuestions = response.sections.flatMap(section => 
+      section.questions.map(q => ({
+        ...q,
+        sectionId: section.id,
+        sectionBody: section.body
+      }))
+    );
+    setQuestions(allQuestions);
+    
+    // Set the first question as current if not already set
+    if (!currentQuestion && allQuestions.length > 0) {
+      setCurrentQuestion(allQuestions[0]);
+    }
+  };
 
   const sendAudioChunk = async (blob) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -205,10 +240,15 @@ export default function Recorder() {
           </div>
         </div>
 
-        {topic && (
+        {currentQuestion && (
           <div className="mb-6">
-            <h2 className="text-lg font-medium text-gray-700 mb-2">Topic:</h2>
-            <p className="text-gray-600">{topic}</p>
+            <h2 className="text-lg font-medium text-gray-700 mb-2">Current Question:</h2>
+            <p className="text-gray-600">{currentQuestion.body}</p>
+            {currentQuestion.is_followup && (
+              <span className="inline-block mt-2 px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
+                Follow-up Question
+              </span>
+            )}
           </div>
         )}
 

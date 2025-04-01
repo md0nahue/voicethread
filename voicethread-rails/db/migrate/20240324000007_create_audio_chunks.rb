@@ -4,15 +4,19 @@ class CreateAudioChunks < ActiveRecord::Migration[7.1]
       t.string :session_id, null: false
       t.string :s3_key, null: false
       t.integer :chunk_number, null: false
-      t.integer :duration, null: false  # Duration in milliseconds
-      t.integer :size, null: false      # File size in bytes
-      t.string :status, default: 'new', null: false
+      t.float :duration
+      t.integer :size
+      t.string :status, default: 'pending'
       t.text :transcription
       t.jsonb :metadata, default: {}
-      t.timestamps
+      t.boolean :created_followup_questions, default: false
+      t.boolean :is_followup_question, default: false
 
-      t.index [:session_id, :chunk_number], unique: true
-      t.index :status
+      t.timestamps
     end
+
+    add_index :audio_chunks, [:session_id, :chunk_number], unique: true
+    add_index :audio_chunks, :session_id
+    add_index :audio_chunks, :status
   end
 end 

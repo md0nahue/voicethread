@@ -1,12 +1,15 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync"
+	"time"
 	"voicethread/internal/database"
 	"voicethread/internal/models"
 	"voicethread/internal/storage"
@@ -25,19 +28,27 @@ type WebSocketHandler struct {
 
 type AudioMessage struct {
 	Type      string `json:"type"`
-	SessionID string `json:"sessionId"`
 	Data      []byte `json:"data"`
+	SessionID string `json:"session_id"`
 }
 
 type SilenceMessage struct {
 	Type      string `json:"type"`
-	SessionID string `json:"sessionId"`
+	SessionID string `json:"session_id"`
 }
 
 type QuestionRequestMessage struct {
 	Type    string `json:"type"`
 	TopicID string `json:"topicId"`
 	UserID  string `json:"userId"`
+}
+
+type StatusUpdateMessage struct {
+	Type      string  `json:"type"`
+	SessionID string  `json:"session_id"`
+	Status    string  `json:"status"`
+	Progress  float64 `json:"progress"`
+	Message   string  `json:"message"`
 }
 
 type RecordingState struct {
@@ -90,7 +101,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 					log.Printf("Invalid session ID")
 					continue
 				}
-				if err := h.handleSilenceDetected(context.Background(), sessionID); err != nil {
+				if err := h.handleSilenceDetected(context.Background(), SilenceMessage{SessionID: sessionID}); err != nil {
 					log.Printf("Failed to handle silence detection: %v", err)
 					continue
 				}
@@ -115,8 +126,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 			}
 
 			// Save the audio chunk
-			key, err := h.handleAudioChunk(context.Background(), audioMsg)
-			if err != nil {
+			if err := h.handleAudioChunk(context.Background(), audioMsg); err != nil {
 				log.Printf("Failed to handle audio chunk: %v", err)
 				continue
 			}
@@ -130,7 +140,7 @@ func (h *WebSocketHandler) HandleWebSocket(w http.ResponseWriter, r *http.Reques
 			}{
 				Type:      "ack",
 				Status:    "success",
-				Key:       key,
+				Key:       audioMsg.SessionID,
 				SessionID: audioMsg.SessionID,
 			}
 
@@ -256,67 +266,140 @@ func (h *WebSocketHandler) handleQuestionRequest(ctx context.Context, conn *webs
 	return conn.WriteJSON(response)
 }
 
-func (h *WebSocketHandler) handleAudioChunk(ctx context.Context, msg AudioMessage) (string, error) {
-	// Get or create recording state for this session
-	state, _ := h.activeRecordings.LoadOrStore(msg.SessionID, &RecordingState{
-		ChunkCount: 0,
-	})
-	recordingState := state.(*RecordingState)
-	recordingState.ChunkCount++
+func (h *WebSocketHandler) handleAudioChunk(ctx context.Context, msg AudioMessage) error {
+	// Generate a unique key for this chunk
+	key := fmt.Sprintf("chunks/%s/%d.wav", msg.SessionID, time.Now().UnixNano())
 
-	// Generate a new key for this chunk
-	key := h.generateChunkKey(msg.SessionID, recordingState.ChunkCount)
-
-	// Save the chunk to S3
-	_, err := h.store.Save(ctx, key, msg.Data)
-	if err != nil {
-		return "", fmt.Errorf("failed to save chunk to storage: %v", err)
+	// Save the audio chunk to S3
+	if err := h.store.SaveAudio(ctx, key, msg.Data); err != nil {
+		return fmt.Errorf("failed to save audio chunk: %v", err)
 	}
 
-	// Create database record for the chunk
-	chunk := &models.AudioChunk{
-		SessionID:   msg.SessionID,
-		S3Key:       key,
-		ChunkNumber: recordingState.ChunkCount,
-		Duration:    0, // TODO: Calculate actual duration
-		Size:        len(msg.Data),
-		Status:      models.ChunkStatusNew,
-		Metadata:    models.JSON{"source": "websocket"},
+	// Create a database record for this chunk
+	chunk := models.AudioChunk{
+		InterviewSessionID: msg.SessionID,
+		S3Key:              key,
+		ChunkNumber:        1, // TODO: Implement proper chunk numbering
+		Duration:           0, // TODO: Calculate actual duration
+		Size:               int64(len(msg.Data)),
+		Status:             "processing",
 	}
 
-	if err := database.DB.Create(chunk).Error; err != nil {
-		// If database creation fails, we should clean up the S3 object
-		// TODO: Implement cleanup of S3 object
-		return "", fmt.Errorf("failed to create chunk record: %v", err)
+	if err := database.DB.Create(&chunk).Error; err != nil {
+		// TODO: Implement S3 cleanup on database failure
+		return fmt.Errorf("failed to create audio chunk record: %v", err)
 	}
 
-	return key, nil
+	// Send acknowledgment back to the client
+	return nil
 }
 
-func (h *WebSocketHandler) handleSilenceDetected(ctx context.Context, sessionID string) error {
-	// Get current recording state
-	state, exists := h.activeRecordings.Load(sessionID)
-	if !exists {
+func (h *WebSocketHandler) handleSilenceDetected(ctx context.Context, msg SilenceMessage) error {
+	// Get the current recording state
+	state, ok := h.activeRecordings.Load(msg.SessionID)
+	if !ok {
+		return fmt.Errorf("no active recording found for session %s", msg.SessionID)
+	}
+
+	recordingState := state.(RecordingState)
+
+	// Close the current chunk
+	if err := h.closeCurrentChunk(ctx, recordingState); err != nil {
+		return err
+	}
+
+	// Update the recording state
+	recordingState.CurrentKey = ""
+	recordingState.ChunkCount++
+	h.activeRecordings.Store(msg.SessionID, recordingState)
+
+	// Send acknowledgment back to the client
+	return nil
+}
+
+func (h *WebSocketHandler) closeCurrentChunk(ctx context.Context, state RecordingState) error {
+	if state.CurrentKey == "" {
 		return nil
 	}
 
-	recordingState := state.(*RecordingState)
-
-	// Close current chunk if it exists
-	if recordingState.CurrentKey != "" {
-		if err := h.store.CloseChunk(ctx, recordingState.CurrentKey); err != nil {
-			log.Printf("Failed to close chunk %s: %v", recordingState.CurrentKey, err)
-			return err
-		}
+	// Update the chunk status in the database
+	if err := database.DB.Model(&models.AudioChunk{}).
+		Where("s3_key = ?", state.CurrentKey).
+		Update("status", "complete").Error; err != nil {
+		return fmt.Errorf("failed to update chunk status: %v", err)
 	}
 
-	// Clear current key to indicate new chunk should be created
-	recordingState.CurrentKey = ""
-	recordingState.ChunkCount++ // Increment chunk counter for next chunk
+	// Check if all chunks are complete
+	var totalChunks int64
+	var completedChunks int64
+
+	if err := database.DB.Model(&models.AudioChunk{}).
+		Where("interview_session_id = ?", state.CurrentKey).
+		Count(&totalChunks).Error; err != nil {
+		return fmt.Errorf("failed to count total chunks: %v", err)
+	}
+
+	if err := database.DB.Model(&models.AudioChunk{}).
+		Where("interview_session_id = ? AND status = ?", state.CurrentKey, "complete").
+		Count(&completedChunks).Error; err != nil {
+		return fmt.Errorf("failed to count completed chunks: %v", err)
+	}
+
+	// If all chunks are complete, notify Rails
+	if totalChunks > 0 && totalChunks == completedChunks {
+		if err := h.notifySessionCompletion(ctx, state.CurrentKey); err != nil {
+			return fmt.Errorf("failed to notify session completion: %v", err)
+		}
+	}
 
 	return nil
 }
 
-func (h *WebSocketHandler) generateChunkKey(sessionID string, chunkNumber int) string {
-	return fmt.Sprintf("%s/chunk_%d.webm", sessionID, chunkNumber)
+func (h *WebSocketHandler) notifySessionCompletion(ctx context.Context, sessionID string) error {
+	// Get the session details
+	var session models.InterviewSession
+	if err := database.DB.First(&session, sessionID).Error; err != nil {
+		return fmt.Errorf("failed to fetch session: %v", err)
+	}
+
+	// Calculate total duration
+	var totalDuration float64
+	if err := database.DB.Model(&models.AudioChunk{}).
+		Where("interview_session_id = ?", sessionID).
+		Select("COALESCE(SUM(duration), 0)").
+		Scan(&totalDuration).Error; err != nil {
+		return fmt.Errorf("failed to calculate total duration: %v", err)
+	}
+
+	// Update session status
+	session.Status = "completed"
+	session.TotalDuration = totalDuration
+	if err := database.DB.Save(&session).Error; err != nil {
+		return fmt.Errorf("failed to update session status: %v", err)
+	}
+
+	// Send webhook to Rails
+	webhookURL := fmt.Sprintf("%s/webhooks/golang", os.Getenv("RAILS_APP_URL"))
+	payload := map[string]interface{}{
+		"session_id": sessionID,
+		"status":     "completed",
+		"duration":   totalDuration,
+	}
+
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal webhook payload: %v", err)
+	}
+
+	resp, err := http.Post(webhookURL, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to send webhook: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("webhook returned non-200 status: %d", resp.StatusCode)
+	}
+
+	return nil
 }

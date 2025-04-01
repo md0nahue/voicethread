@@ -12,35 +12,33 @@ const (
 	ChunkStatusTranscribed ChunkStatus = "transcribed"
 )
 
-type Recording struct {
-	ID        uint   `gorm:"primarykey"`
-	SessionID string `gorm:"index;not null"`
-	Topic     string `gorm:"index;not null"`
-	Duration  int    `gorm:"not null"` // Total duration in milliseconds
-	Chunks    int    `gorm:"not null"` // Total number of chunks
-	Metadata  JSON   `gorm:"type:jsonb;default:'{}'"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+type InterviewSession struct {
+	ID                    string       `json:"id" gorm:"primaryKey"`
+	UserID                string       `json:"user_id"`
+	TopicID               string       `json:"topic_id"`
+	Status                string       `json:"status"`
+	Metadata              string       `json:"metadata" gorm:"type:jsonb"`
+	FinalAudioURL         string       `json:"final_audio_url"`
+	TotalDuration         float64      `json:"total_duration"`
+	PolishedTranscription string       `json:"polished_transcription"`
+	RawTranscript         string       `json:"raw_transcript"`
+	CreatedAt             time.Time    `json:"created_at"`
+	UpdatedAt             time.Time    `json:"updated_at"`
+	AudioChunks           []AudioChunk `json:"audio_chunks" gorm:"foreignKey:InterviewSessionID"`
 }
 
 type AudioChunk struct {
-	ID            uint        `gorm:"primarykey"`
-	SessionID     string      `gorm:"index;not null"`
-	S3Key         string      `gorm:"not null"` // Path to the chunk file in S3
-	ChunkNumber   int         `gorm:"not null"`
-	Duration      int         `gorm:"not null"` // Duration in milliseconds
-	Size          int         `gorm:"not null"` // File size in bytes
-	Status        ChunkStatus `gorm:"not null;default:'new'"`
-	Transcription string      `gorm:"type:text"`
-	Metadata      JSON        `gorm:"type:jsonb;default:'{}'"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-
-	// Unique constraint on session_id and chunk_number
-	UniqueConstraint struct {
-		SessionID   string `gorm:"uniqueIndex:idx_session_chunk"`
-		ChunkNumber int    `gorm:"uniqueIndex:idx_session_chunk"`
-	} `gorm:"embedded"`
+	ID                 string    `json:"id" gorm:"primaryKey"`
+	InterviewSessionID string    `json:"interview_session_id"`
+	S3Key              string    `json:"s3_key"`
+	ChunkNumber        int       `json:"chunk_number"`
+	Duration           float64   `json:"duration"`
+	Size               int64     `json:"size"`
+	Status             string    `json:"status"`
+	Transcription      string    `json:"transcription"`
+	Metadata           string    `json:"metadata" gorm:"type:jsonb"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
 }
 
 func (s ChunkStatus) String() string {

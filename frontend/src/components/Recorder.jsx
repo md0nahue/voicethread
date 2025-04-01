@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import WaveSurfer from 'wavesurfer.js';
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.js';
@@ -7,10 +7,15 @@ const WS_URL = 'ws://localhost:8080/ws';
 const SILENCE_THRESHOLD = 0.01;
 const SILENCE_DURATION = 1000; // 1 second of silence to trigger new chunk
 
-export default function Recorder() {
+const Recorder = ({ sessionId, onSessionComplete }) => {
   const [searchParams] = useSearchParams();
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [sessionStatus, setSessionStatus] = useState('in_progress');
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState(null);
   const [audioChunks, setAudioChunks] = useState([]);
   const [isSilenceDetected, setIsSilenceDetected] = useState(true);
   const [questions, setQuestions] = useState([]);
@@ -23,7 +28,6 @@ export default function Recorder() {
   const wsRef = useRef(null);
   const silenceTimerRef = useRef(null);
   const currentChunkRef = useRef([]);
-  const sessionId = searchParams.get('session') || 'default-session';
   const topicId = searchParams.get('topic');
 
   useEffect(() => {
@@ -36,19 +40,21 @@ export default function Recorder() {
       if (topicId) {
         requestQuestions();
       }
+      // Send initial session info
+      wsRef.current.send(JSON.stringify({
+        type: 'session_start',
+        session_id: sessionId
+      }));
     };
 
     wsRef.current.onmessage = (event) => {
-      const response = JSON.parse(event.data);
-      if (response.type === 'ack') {
-        console.log('Audio chunk saved:', response);
-      } else if (response.type === 'interview_questions') {
-        handleQuestionsReceived(response);
-      }
+      const data = JSON.parse(event.data);
+      handleWebSocketMessage(data);
     };
 
     wsRef.current.onerror = (error) => {
       console.error('WebSocket error:', error);
+      setError('Connection error occurred');
     };
 
     wsRef.current.onclose = () => {
@@ -105,6 +111,14 @@ export default function Recorder() {
       }
     });
 
+    wavesurferRef.current.on('ready', () => {
+      setDuration(wavesurferRef.current.getDuration());
+    });
+
+    wavesurferRef.current.on('audioprocess', () => {
+      setCurrentTime(wavesurferRef.current.getCurrentTime());
+    });
+
     return () => {
       if (wsRef.current) {
         wsRef.current.close();
@@ -122,7 +136,7 @@ export default function Recorder() {
         mediaRecorderRef.current.stop();
       }
     };
-  }, []);
+  }, [sessionId, topicId]);
 
   const requestQuestions = () => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -148,6 +162,41 @@ export default function Recorder() {
     // Set the first question as current if not already set
     if (!currentQuestion && allQuestions.length > 0) {
       setCurrentQuestion(allQuestions[0]);
+    }
+  };
+
+  const handleWebSocketMessage = (data) => {
+    switch (data.type) {
+      case 'ack':
+        console.log('Received acknowledgment:', data);
+        break;
+      case 'status_update':
+        handleStatusUpdate(data);
+        break;
+      case 'session_complete':
+        handleSessionComplete(data);
+        break;
+      case 'interview_questions':
+        handleQuestionsReceived(data);
+        break;
+      default:
+        console.log('Unknown message type:', data.type);
+    }
+  };
+
+  const handleStatusUpdate = (data) => {
+    setSessionStatus(data.status);
+    setProgress(data.progress);
+    if (data.message) {
+      console.log('Status message:', data.message);
+    }
+  };
+
+  const handleSessionComplete = (data) => {
+    setSessionStatus('completed');
+    setProgress(100);
+    if (onSessionComplete) {
+      onSessionComplete(data);
     }
   };
 
@@ -194,10 +243,11 @@ export default function Recorder() {
 
       mediaRecorder.start(100); // Collect data every 100ms
       timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
+        setCurrentTime((prev) => prev + 1);
       }, 1000);
     } catch (error) {
       console.error('Error starting recording:', error);
+      setError('Failed to start recording');
     }
   };
 
@@ -225,9 +275,16 @@ export default function Recorder() {
   };
 
   const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlayPause = () => {
+    if (wavesurferRef.current) {
+      wavesurferRef.current.playPause();
+      setIsPlaying(!isPlaying);
+    }
   };
 
   return (
@@ -259,22 +316,30 @@ export default function Recorder() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <button
-              onClick={isRecording ? stopRecording : startRecording}
+              onClick={togglePlayPause}
               className={`px-4 py-2 rounded-md text-white ${
-                isRecording ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary/90'
+                isPlaying ? 'bg-red-500 hover:bg-red-600' : 'bg-primary hover:bg-primary/90'
               }`}
             >
-              {isRecording ? 'Stop Recording' : 'Start Recording'}
+              {isPlaying ? 'Pause' : 'Play'}
             </button>
             <span className="text-gray-600">
-              {isRecording ? '⏱️ ' + formatTime(recordingTime) : '00:00'}
+              {formatTime(currentTime)} / {formatTime(duration)}
             </span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className={`w-3 h-3 rounded-full ${isSilenceDetected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm text-gray-600">
-              {isSilenceDetected ? 'Silence Detected' : 'Speaking'}
+            <span className={`px-3 py-1 rounded-full text-sm ${
+              sessionStatus === 'completed' ? 'bg-green-100 text-green-800' :
+              sessionStatus === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-blue-100 text-blue-800'
+            }`}>
+              {sessionStatus.charAt(0).toUpperCase() + sessionStatus.slice(1)}
             </span>
+            {progress > 0 && (
+              <span className="text-sm text-gray-600">
+                {Math.round(progress)}%
+              </span>
+            )}
           </div>
         </div>
 
@@ -283,7 +348,28 @@ export default function Recorder() {
           <div>🎤 {isRecording ? 'Mic Active' : 'Mic Inactive'}</div>
           <div>📦 Chunks Sent: {audioChunks.length}</div>
         </div>
+
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={isRecording ? stopRecording : startRecording}
+            className={`px-4 py-2 rounded-md text-white font-medium ${
+              isRecording
+                ? 'bg-red-600 hover:bg-red-700'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
+          >
+            {isRecording ? 'Stop Recording' : 'Start Recording'}
+          </button>
+        </div>
+
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
-} 
+};
+
+export default Recorder; 

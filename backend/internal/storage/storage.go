@@ -18,7 +18,11 @@ import (
 type Storage interface {
 	Save(ctx context.Context, key string, data []byte) (string, error)
 	Get(ctx context.Context, key string) ([]byte, error)
+	Delete(ctx context.Context, key string) error
+	SaveAudio(ctx context.Context, key string, data []byte) error
 	CloseChunk(ctx context.Context, key string) error
+	GetSignedURL(ctx context.Context, key string) (string, error)
+	Stream(ctx context.Context, key string) (io.ReadCloser, error)
 }
 
 // LocalStorage implements Storage interface for local filesystem

@@ -1,0 +1,45 @@
+<div class="container mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-8">Your Interviews</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <% @interview_sessions.each do |session| %>
+      <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="p-6">
+          <h2 class="text-xl font-semibold mb-2">
+            <%= link_to session.topic.body, interview_session_path(session), class: "text-blue-600 hover:text-blue-800" %>
+          </h2>
+          
+          <div class="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+            <span class="flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <%= format_duration(session.total_duration) %>
+            </span>
+            
+            <span class="flex items-center">
+              <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+              </svg>
+              <%= session.created_at.strftime("%B %d, %Y") %>
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full text-sm <%= session.completed? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
+              <%= session.status.titleize %>
+            </span>
+            
+            <%= link_to "View Details", interview_session_path(session), class: "inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700" %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<% content_for :javascript do %>
+  <script>
+    // Add any JavaScript for interactivity here
+  </script>
+<% end %> 

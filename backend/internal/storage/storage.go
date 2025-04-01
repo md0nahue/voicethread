@@ -16,8 +16,9 @@ import (
 
 // Storage defines the interface for audio storage
 type Storage interface {
-	Save(ctx context.Context, sessionID string, data []byte) (string, error)
+	Save(ctx context.Context, key string, data []byte) (string, error)
 	Get(ctx context.Context, key string) ([]byte, error)
+	CloseChunk(ctx context.Context, key string) error
 }
 
 // LocalStorage implements Storage interface for local filesystem
@@ -33,16 +34,26 @@ func NewLocalStorage(baseDir string) *LocalStorage {
 	return &LocalStorage{baseDir: baseDir}
 }
 
-func (s *LocalStorage) Save(ctx context.Context, sessionID string, data []byte) (string, error) {
-	filename := filepath.Join(s.baseDir, sessionID+"-"+time.Now().Format("20060102150405")+".webm")
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+func (s *LocalStorage) Save(ctx context.Context, key string, data []byte) (string, error) {
+	fullPath := filepath.Join(s.baseDir, key)
+	// Ensure directory exists
+	if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
 		return "", err
 	}
-	return filename, nil
+	if err := os.WriteFile(fullPath, data, 0644); err != nil {
+		return "", err
+	}
+	return key, nil
 }
 
 func (s *LocalStorage) Get(ctx context.Context, key string) ([]byte, error) {
-	return os.ReadFile(key)
+	fullPath := filepath.Join(s.baseDir, key)
+	return os.ReadFile(fullPath)
+}
+
+func (s *LocalStorage) CloseChunk(ctx context.Context, key string) error {
+	// For local storage, no special handling needed
+	return nil
 }
 
 // S3Storage implements Storage interface for AWS S3
@@ -73,8 +84,7 @@ func NewS3Storage(accessKey, secretKey, region, bucket string) *S3Storage {
 	}
 }
 
-func (s *S3Storage) Save(ctx context.Context, sessionID string, data []byte) (string, error) {
-	key := sessionID + "-" + time.Now().Format("20060102150405") + ".webm"
+func (s *S3Storage) Save(ctx context.Context, key string, data []byte) (string, error) {
 	_, err := s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket: aws.String(s.bucket),
 		Key:    aws.String(key),
@@ -96,4 +106,19 @@ func (s *S3Storage) Get(ctx context.Context, key string) ([]byte, error) {
 	}
 	defer result.Body.Close()
 	return io.ReadAll(result.Body)
+}
+
+func (s *S3Storage) CloseChunk(ctx context.Context, key string) error {
+	// For S3, we can add metadata to indicate the chunk is complete
+	_, err := s.client.CopyObject(ctx, &s3.CopyObjectInput{
+		Bucket:     aws.String(s.bucket),
+		CopySource: aws.String(s.bucket + "/" + key),
+		Key:        aws.String(key),
+		Metadata: map[string]string{
+			"status": "complete",
+			"closed": time.Now().UTC().Format(time.RFC3339),
+		},
+		MetadataDirective: "REPLACE",
+	})
+	return err
 }

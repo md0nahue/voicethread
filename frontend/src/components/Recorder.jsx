@@ -4,6 +4,8 @@ import WaveSurfer from 'wavesurfer.js';
 import RecordPlugin from 'wavesurfer.js/dist/plugins/record.js';
 
 const WS_URL = 'ws://localhost:8080/ws';
+const SILENCE_THRESHOLD = 0.01;
+const SILENCE_DURATION = 1000; // 1 second of silence to trigger new chunk
 
 export default function Recorder() {
   const [searchParams] = useSearchParams();
@@ -17,6 +19,8 @@ export default function Recorder() {
   const wavesurferRef = useRef(null);
   const recordPluginRef = useRef(null);
   const wsRef = useRef(null);
+  const silenceTimerRef = useRef(null);
+  const currentChunkRef = useRef([]);
   const sessionId = searchParams.get('session') || 'default-session';
   const topic = searchParams.get('topic');
 
@@ -62,7 +66,7 @@ export default function Recorder() {
     recordPluginRef.current = wavesurferRef.current.registerPlugin(
       RecordPlugin.create({
         scrollingWaveform: true,
-        renderRecordedAudio: false, // We'll handle the recorded audio separately
+        renderRecordedAudio: false,
         audioBitsPerSecond: 128000
       })
     );
@@ -70,9 +74,27 @@ export default function Recorder() {
     // Set up audio processing for silence detection
     recordPluginRef.current.on('record-progress', (duration) => {
       const audioData = recordPluginRef.current.getAnalyser().getFloatTimeDomainData();
-      const silenceThreshold = 0.01;
-      const isSilent = audioData.every(value => Math.abs(value) < silenceThreshold);
-      setIsSilenceDetected(isSilent);
+      const isSilent = audioData.every(value => Math.abs(value) < SILENCE_THRESHOLD);
+      
+      if (isSilent) {
+        if (!silenceTimerRef.current) {
+          silenceTimerRef.current = setTimeout(() => {
+            setIsSilenceDetected(true);
+            if (currentChunkRef.current.length > 0) {
+              // Send current chunk and silence detection message
+              sendAudioChunk(new Blob(currentChunkRef.current, { type: 'audio/webm;codecs=opus' }));
+              sendSilenceDetected();
+              currentChunkRef.current = [];
+            }
+          }, SILENCE_DURATION);
+        }
+      } else {
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = null;
+        }
+        setIsSilenceDetected(false);
+      }
     });
 
     return () => {
@@ -84,6 +106,9 @@ export default function Recorder() {
       }
       if (timerRef.current) {
         clearInterval(timerRef.current);
+      }
+      if (silenceTimerRef.current) {
+        clearTimeout(silenceTimerRef.current);
       }
       if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();
@@ -102,27 +127,37 @@ export default function Recorder() {
     }
   };
 
+  const sendSilenceDetected = () => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'silence',
+        sessionId: sessionId
+      };
+      wsRef.current.send(JSON.stringify(message));
+    }
+  };
+
   const startRecording = async () => {
     try {
       // Start recording using WaveSurfer's Record plugin
       await recordPluginRef.current.startRecording();
       setIsRecording(true);
+      currentChunkRef.current = [];
 
-      // Set up the MediaRecorder for sending chunks
+      // Set up the MediaRecorder for collecting chunks
       const stream = recordPluginRef.current.getMediaStream();
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       });
       mediaRecorderRef.current = mediaRecorder;
 
-      mediaRecorder.ondataavailable = async (event) => {
-        if (event.data.size > 0 && !isSilenceDetected) {
-          setAudioChunks((prev) => [...prev, event.data]);
-          await sendAudioChunk(event.data);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          currentChunkRef.current.push(event.data);
         }
       };
 
-      mediaRecorder.start(1000); // Check for chunks every second
+      mediaRecorder.start(100); // Collect data every 100ms
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -131,17 +166,26 @@ export default function Recorder() {
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (recordPluginRef.current) {
       recordPluginRef.current.stopRecording();
     }
     if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      
+      // Send any remaining audio data
+      if (currentChunkRef.current.length > 0) {
+        await sendAudioChunk(new Blob(currentChunkRef.current, { type: 'audio/webm;codecs=opus' }));
+        currentChunkRef.current = [];
+      }
     }
     setIsRecording(false);
     if (timerRef.current) {
       clearInterval(timerRef.current);
+    }
+    if (silenceTimerRef.current) {
+      clearTimeout(silenceTimerRef.current);
     }
   };
 

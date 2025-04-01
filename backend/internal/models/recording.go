@@ -4,13 +4,12 @@ import (
 	"time"
 )
 
-// ChunkStatus represents the transcription status of an audio chunk
-type ChunkStatus int
+// ChunkStatus represents the status of an audio chunk
+type ChunkStatus string
 
 const (
-	ChunkStatusNew ChunkStatus = iota
-	ChunkStatusTranscribing
-	ChunkStatusTranscribed
+	ChunkStatusNew         ChunkStatus = "new"
+	ChunkStatusTranscribed ChunkStatus = "transcribed"
 )
 
 type Recording struct {
@@ -25,31 +24,27 @@ type Recording struct {
 }
 
 type AudioChunk struct {
-	ID          uint        `gorm:"primarykey"`
-	RecordingID uint        `gorm:"not null"`
-	Recording   Recording   `gorm:"foreignKey:RecordingID"`
-	ChunkNumber int         `gorm:"not null"`
-	FilePath    string      `gorm:"not null"` // Path to the chunk file in storage
-	Duration    int         `gorm:"not null"` // Duration in milliseconds
-	Size        int         `gorm:"not null"` // File size in bytes
-	Status      ChunkStatus `gorm:"not null;default:0"`
-	Transcript  string      `gorm:"type:text"`
-	Metadata    JSON        `gorm:"type:jsonb;default:'{}'"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	ID            uint        `gorm:"primarykey"`
+	SessionID     string      `gorm:"index;not null"`
+	S3Key         string      `gorm:"not null"` // Path to the chunk file in S3
+	ChunkNumber   int         `gorm:"not null"`
+	Duration      int         `gorm:"not null"` // Duration in milliseconds
+	Size          int         `gorm:"not null"` // File size in bytes
+	Status        ChunkStatus `gorm:"not null;default:'new'"`
+	Transcription string      `gorm:"type:text"`
+	Metadata      JSON        `gorm:"type:jsonb;default:'{}'"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+
+	// Unique constraint on session_id and chunk_number
+	UniqueConstraint struct {
+		SessionID   string `gorm:"uniqueIndex:idx_session_chunk"`
+		ChunkNumber int    `gorm:"uniqueIndex:idx_session_chunk"`
+	} `gorm:"embedded"`
 }
 
 func (s ChunkStatus) String() string {
-	switch s {
-	case ChunkStatusNew:
-		return "new"
-	case ChunkStatusTranscribing:
-		return "transcribing"
-	case ChunkStatusTranscribed:
-		return "transcribed"
-	default:
-		return "unknown"
-	}
+	return string(s)
 }
 
 type JSON map[string]interface{}

@@ -7,7 +7,7 @@
         Simple, transparent pricing
       </p>
       <p class="max-w-xl mt-5 mx-auto text-xl text-gray-500">
-        Choose the plan that best fits your needs. All plans include our core features.
+        Start with a 1-week free trial. No credit card required.
       </p>
     </div>
   </div>
@@ -17,16 +17,16 @@
 <div class="bg-gray-50">
   <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
     <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-      <!-- Free Tier -->
+      <!-- Free Trial -->
       <div class="bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="px-6 py-8 sm:px-10 sm:py-10">
-          <h3 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Free</h3>
-          <p class="mt-4 text-sm text-gray-500">Perfect for trying out VoiceThread</p>
+          <h3 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Free Trial</h3>
+          <p class="mt-4 text-sm text-gray-500">Try VoiceThread for 1 week</p>
           <p class="mt-8">
             <span class="text-4xl font-extrabold text-gray-900">$0</span>
-            <span class="text-base font-medium text-gray-500">/month</span>
+            <span class="text-base font-medium text-gray-500">/week</span>
           </p>
-          <%= link_to "Get Started", new_topic_path, class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
+          <%= link_to "Start Free Trial", new_user_registration_path, class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
         </div>
         <div class="px-6 pt-6 pb-8 bg-gray-50 sm:px-10 sm:pt-10">
           <h4 class="text-xs font-medium text-gray-900 tracking-wide uppercase">What's included</h4>
@@ -35,19 +35,19 @@
               <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              <span class="text-sm text-gray-500">Up to 5 interviews per month</span>
+              <span class="text-sm text-gray-500">Full access to all features</span>
             </li>
             <li class="flex space-x-3">
               <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              <span class="text-sm text-gray-500">Basic AI interviewer</span>
+              <span class="text-sm text-gray-500">No credit card required</span>
             </li>
             <li class="flex space-x-3">
               <svg class="flex-shrink-0 h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
-              <span class="text-sm text-gray-500">Standard audio quality</span>
+              <span class="text-sm text-gray-500">Cancel anytime</span>
             </li>
           </ul>
         </div>
@@ -59,10 +59,10 @@
           <h3 class="text-2xl font-extrabold text-gray-900 sm:text-3xl">Pro</h3>
           <p class="mt-4 text-sm text-gray-500">For serious storytellers</p>
           <p class="mt-8">
-            <span class="text-4xl font-extrabold text-gray-900">$29</span>
+            <span class="text-4xl font-extrabold text-gray-900">$15</span>
             <span class="text-base font-medium text-gray-500">/month</span>
           </p>
-          <%= link_to "Get Started", new_topic_path, class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
+          <%= link_to "Subscribe Now", new_subscription_path, class: "mt-8 block w-full bg-indigo-600 border border-transparent rounded-md py-2 text-sm font-semibold text-white text-center hover:bg-indigo-700" %>
         </div>
         <div class="px-6 pt-6 pb-8 bg-gray-50 sm:px-10 sm:pt-10">
           <h4 class="text-xs font-medium text-gray-900 tracking-wide uppercase">What's included</h4>
@@ -150,10 +150,18 @@
       <dl class="mt-6 space-y-6 divide-y divide-gray-200">
         <div class="pt-6">
           <dt class="text-lg">
+            <span class="font-medium text-gray-900">How does the free trial work?</span>
+          </dt>
+          <dd class="mt-2 text-base text-gray-500">
+            Start with a 1-week free trial of our Pro plan. No credit card required. You'll have full access to all features during the trial period.
+          </dd>
+        </div>
+        <div class="pt-6">
+          <dt class="text-lg">
             <span class="font-medium text-gray-900">What happens after my free trial?</span>
           </dt>
           <dd class="mt-2 text-base text-gray-500">
-            After your free trial, you can continue using the free tier with limited features, or upgrade to Pro for full access to all features.
+            After your 1-week free trial, you'll need to subscribe to continue using VoiceThread. You can subscribe at any time during the trial.
           </dd>
         </div>
         <div class="pt-6">
@@ -182,11 +190,11 @@
   <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
     <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
       <span class="block">Ready to start your journey?</span>
-      <span class="block text-indigo-600">Start your VoiceThread today.</span>
+      <span class="block text-indigo-600">Start your 1-week free trial today.</span>
     </h2>
     <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
       <div class="inline-flex rounded-md shadow">
-        <%= link_to "Get Started", new_topic_path, class: "inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
+        <%= link_to "Start Free Trial", new_user_registration_path, class: "inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700" %>
       </div>
     </div>
   </div>
